@@ -55,7 +55,7 @@ type Item struct {
 	Name        string   `json:"name"`
 	Price       int      `json:"price"`
 	Images      []string `json:"images"`
-    Reviews     int      `json:"reviews"`
+	Reviews     int      `json:"reviews"`
 	Description string   `json:"description"`
 	Url         string
 }
@@ -63,7 +63,6 @@ type Item struct {
 var scrapingResult = []Content{}
 
 func main() {
-
 	log.Println("Starting scraper...")
 	for _, content := range contentToScrap {
 		itemListQuery := fmt.Sprintf(`
@@ -96,12 +95,11 @@ func main() {
 		ctx = drivers.WithContext(ctx, cdp.NewDriver(), drivers.AsDefault())
 
 		out, err := program.Run(ctx)
-
 		if err != nil {
 			panic(err)
 		}
 
-		var itemUrls = []string{}
+		itemUrls := []string{}
 
 		json.Unmarshal(out, &itemUrls)
 
@@ -146,19 +144,18 @@ func main() {
 			}
 			json.Unmarshal(o, &item)
 
-            *content.Items = append(*content.Items, item)
+			*content.Items = append(*content.Items, item)
 		}
 	}
 
-    out, err := json.Marshal(contentToScrap)
+	out, err := json.Marshal(contentToScrap)
+	if err != nil {
+		panic(err)
+	}
 
-    if err != nil {
-        panic(err)
-    }
+	err = os.WriteFile("./out/dat.json", out, 0644)
 
-    err = os.WriteFile("./out/dat.json", out, 0644)
-
-    if err != nil {
-        panic(err)
-    }
+	if err != nil {
+		panic(err)
+	}
 }

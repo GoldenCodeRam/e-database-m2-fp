@@ -1,0 +1,17 @@
+services:
+  postgres:
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: shop
+    ports:
+      - 5432:5432
+
+  mongo:
+    image: mongo
+    environment:
+      MONGO_INITDB_DATABASE: products
+      MONGO_INITDB_ROOT_USERNAME: test
+      MONGO_INITDB_ROOT_PASSWORD: test
+    ports:
+      - 27017:27017
