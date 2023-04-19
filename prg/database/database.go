@@ -39,6 +39,56 @@ func doExecWithConnection(do func(tx pgx.Tx) error) error {
 	return err
 }
 
+func ExecuteInsert(sql string) error {
+	err := doExecWithConnection(func(tx pgx.Tx) error {
+		_, err := tx.Exec(
+			context.Background(),
+			sql,
+		)
+
+		return err
+	})
+
+	return err
+}
+
+func ExecuteRowQuery(sql string, result any) error {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("error loading .env file")
+	}
+
+	conn, err := pgxpool.New(context.Background(), os.Getenv("POSTGRESQL_URL"))
+	if err != nil {
+		log.Fatal(err, "unable to connect to database")
+	}
+
+	err = conn.QueryRow(context.Background(), sql).Scan(result)
+	conn.Close()
+
+	return err
+}
+
+func ExecuteQuery(sql string, cb func(rows pgx.Rows) error) error {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("error loading .env file")
+	}
+
+	conn, err := pgxpool.New(context.Background(), os.Getenv("POSTGRESQL_URL"))
+	if err != nil {
+		log.Fatal(err, "unable to connect to database")
+	}
+
+    rows, err := conn.Query(context.Background(), sql)
+
+    cb(rows)
+
+	conn.Close()
+
+	return err
+}
+
 func ExecuteFakeInsert(
 	record FakeRecord,
 	amount int,

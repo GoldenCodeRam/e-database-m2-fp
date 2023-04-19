@@ -2,8 +2,6 @@
 include .env
 export
 
-MIGRATIONS_PATH='db/migrations'
-
 migrate-up:
 	migrate -database ${POSTGRESQL_URL} -path ${MIGRATIONS_PATH} up
 
@@ -15,4 +13,3 @@ migrate-force:
 
 migrate-create:
 	migrate create -ext sql -dir ${MIGRATIONS_PATH} -seq $(NAME)
-

@@ -10,6 +10,9 @@ import (
 	"github.com/MontFerret/ferret/pkg/compiler"
 	"github.com/MontFerret/ferret/pkg/drivers"
 	"github.com/MontFerret/ferret/pkg/drivers/cdp"
+	"github.com/joho/godotenv"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 const (
@@ -56,20 +59,31 @@ type Item struct {
 	Price       int      `json:"price"`
 	Images      []string `json:"images"`
 	Reviews     int      `json:"reviews"`
+    ReviewScore float32  `json:"reviewScore"`
 	Description string   `json:"description"`
 	Url         string
 }
 
-var scrapingResult = []Content{}
-
 func main() {
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("error loading .env file")
+	}
+
+	serverApi := options.ServerAPI(options.ServerAPIVersion1)
+	opts := options.Client().ApplyURI(os.Getenv("MONGODB_URL")).SetServerAPIOptions(serverApi)
+
+	client, err := mongo.Connect(context.TODO(), opts)
+
+    coll := client.Database("products").Collection("products")
+
 	log.Println("Starting scraper...")
 	for _, content := range contentToScrap {
 		itemListQuery := fmt.Sprintf(`
         LET doc = DOCUMENT("%s")
         LET nextPage = "li.andes-pagination__button.andes-pagination__button--next.shops__pagination-button a"
         LET itemClass = "a.ui-search-item__group__element.shops__items-group-details.ui-search-link"
-        LET pages = 1
+        LET pages = 2
 
         LET result = (
             FOR page IN 1..pages
@@ -118,6 +132,7 @@ func main() {
             LET imagesSelector = "figure.ui-pdp-gallery__figure img"
             LET reviewsSelector = "span.ui-pdp-review__amount"
             LET descriptionSelector = "p.ui-pdp-description__content"
+            LET reviewScoreSelector = "p.ui-review-capability__rating__average"
 
             WAIT_ELEMENT(doc, mainSelector)
 
@@ -131,6 +146,7 @@ func main() {
                 price: TO_INT(ELEMENT(doc, priceSelector).attributes.content),
                 images: images,
                 reviews: TO_INT(REGEX_MATCH(ELEMENT(doc, reviewsSelector).innerText, "[0-9]+")),
+                reviewScore: TO_FLOAT(ELEMENT(doc, reviewScoreSelector).innerText),
                 description: ELEMENT(doc, descriptionSelector).innerText,
             }
             `, url)
@@ -144,18 +160,7 @@ func main() {
 			}
 			json.Unmarshal(o, &item)
 
-			*content.Items = append(*content.Items, item)
+            coll.InsertOne(context.Background(), item)
 		}
-	}
-
-	out, err := json.Marshal(contentToScrap)
-	if err != nil {
-		panic(err)
-	}
-
-	err = os.WriteFile("./out/dat.json", out, 0644)
-
-	if err != nil {
-		panic(err)
 	}
 }
