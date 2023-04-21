@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 
 	"github.com/MontFerret/ferret/pkg/compiler"
@@ -59,9 +60,11 @@ type Item struct {
 	Price       int      `json:"price"`
 	Images      []string `json:"images"`
 	Reviews     int      `json:"reviews"`
-    ReviewScore float32  `json:"reviewScore"`
+	ReviewScore float32  `json:"reviewScore"`
 	Description string   `json:"description"`
+    Category    string
 	Url         string
+	Stock       int
 }
 
 func main() {
@@ -75,7 +78,7 @@ func main() {
 
 	client, err := mongo.Connect(context.TODO(), opts)
 
-    coll := client.Database("products").Collection("products")
+	coll := client.Database("products").Collection("products")
 
 	log.Println("Starting scraper...")
 	for _, content := range contentToScrap {
@@ -156,11 +159,13 @@ func main() {
 			o, _ := prg.Run(ctx)
 
 			item := Item{
+                Category: content.Type,
 				Url: url,
+                Stock: rand.Intn(30),
 			}
 			json.Unmarshal(o, &item)
 
-            coll.InsertOne(context.Background(), item)
+			coll.InsertOne(context.Background(), item)
 		}
 	}
 }

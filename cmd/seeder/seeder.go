@@ -73,4 +73,6 @@ func main() {
 		}
 		return nil
 	})
+
+    database.ExecuteFakeInsert(new(model.Coupon), 200)
 }
